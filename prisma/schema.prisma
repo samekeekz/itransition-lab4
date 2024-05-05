@@ -10,7 +10,7 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = "mongodb+srv://belentbais03:Kazakhstanalga1@cluster0.ixorlbc.mongodb.net/db?ssl=true&connectTimeoutMS=5000&authSource=admin"
+  url      = env("DATABASE_URL")
 }
 
 model User {
