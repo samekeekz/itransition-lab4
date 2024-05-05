@@ -10,14 +10,14 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = env("DATABASE_URL")
+  url      = "mongodb+srv://belentbais03:Kazakhstanalga1@cluster0.ixorlbc.mongodb.net/db?ssl=true&connectTimeoutMS=5000&authSource=admin"
 }
 
 model User {
   id                String     @id @default(auto()) @map("_id") @db.ObjectId
   name              String
   email             String     @unique
-  last_login        DateTime?
+  last_login        DateTime?  @default(now())
   registration_time DateTime   @default(now())
   status            UserStatus @default(ACTIVE)
   password          String
