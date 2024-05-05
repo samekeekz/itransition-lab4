@@ -6,11 +6,13 @@ import { z } from "zod";
 import { login } from "@/app/actions";
 import { signInSchema } from "@/libs/signinSchema/signInSchema";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 
 type SchemaType = z.infer<typeof signInSchema>;
 
 const LoginForm = () => {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -19,12 +21,23 @@ const LoginForm = () => {
   } = useForm<SchemaType>({ resolver: zodResolver(signInSchema) });
 
   const onsubmit = async (data: SchemaType) => {
-    const res = await login(data);
-    if (res.error) {
-      console.log(res.error.message);
+    console.log(data);
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+
+    });
+    if (!res.ok) {
+      const badRes = await res.json();
+      console.log(badRes.error.message);
       return;
     }
-
+    const successRes = await res.json();
+    console.log(successRes.status);
+    router.push("/");
   };
 
   return (

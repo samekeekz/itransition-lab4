@@ -17,7 +17,7 @@ model User {
   id                String     @id @default(auto()) @map("_id") @db.ObjectId
   name              String
   email             String     @unique
-  last_login        DateTime?  @default(now())
+  last_login        DateTime   @default(now())
   registration_time DateTime   @default(now())
   status            UserStatus @default(ACTIVE)
   password          String

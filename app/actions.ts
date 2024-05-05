@@ -1,74 +1,87 @@
 "use server";
 
 import prisma from "@/prisma/prisma";
-import { SignupSchema } from "@/libs/signupSchema/signupSchema";
-import bcrypt from "bcrypt";
-import { SignInSchema } from "@/libs/signinSchema/signInSchema";
-import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
-export const signup = async (formData: SignupSchema) => {
+export const getUsers = async () => {
+  const users = await prisma.user.findMany();
 
-  const isExistingUser = await prisma.user.findUnique({
-    where: {
-      email: formData.email,
-    },
-  });
-
-  if (isExistingUser) {
-    return {
-      error: {
-        message: "User already exists",
-      },
-    };
-  }
-
-  const hashedPassword = await bcrypt.hash(formData.password, 10);
-
-  await prisma.user.create({
-    data: {
-      name: formData.name,
-      email: formData.email,
-      password: hashedPassword,
-    },
-  });
-
-  redirect("/login");
-
+  return users;
 };
 
-export const login = async (formData: SignInSchema) => {
-
-  const user = await prisma.user.findUnique({
-    where: {
-      email: formData.email,
-    },
-  });
-
-  if (!user) {
-    return {
-      error: {
-        message: "User not found",
-      },
-    };
+export const deleteUsers = async (id: string, userIds: string[]) => {
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user || user.status !== "ACTIVE") {
+    return { error: { message: "User status is not active" } };
   }
 
-  const passwordMatch = await bcrypt.compare(formData.password, user.password);
-  if (!passwordMatch) {
-    return {
-      error: {
-        message: "Password incorrect",
+  await Promise.all(userIds.map(userId =>
+    prisma.user.delete({
+      where: {
+        id: userId,
       },
-    };
+    }),
+  ));
+
+  revalidatePath("/");
+
+  return {
+    success: {
+      message: "Users deleted",
+    },
+  };
+};
+
+
+export const blockUsers = async (id: string, userIds: string[]) => {
+  console.log(id, userIds);
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user || user.status !== "ACTIVE") {
+    return { error: { message: "User status is not active" } };
   }
 
-  await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      last_login: new Date(),
-    },
-  });
+  await Promise.all(userIds.map(userId =>
+    prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        status: "BLOCKED",
+      },
+    }),
+  ));
 
-  redirect("/");
+  revalidatePath("/");
+
+  return {
+    success: {
+      message: "Users blocked successfully",
+    },
+  };
+};
+
+export const unblockUsers = async (id: string, userIds: string[]) => {
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user || user.status !== "ACTIVE") {
+    return { error: { message: "User status is not active" } };
+  }
+
+  await Promise.all(userIds.map(userId =>
+    prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        status: "ACTIVE",
+      },
+    }),
+  ));
+
+  revalidatePath("/");
+
+  return {
+    success: {
+      message: "Users unblocked successfully",
+    },
+  };
 };

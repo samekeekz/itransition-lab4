@@ -1,14 +1,13 @@
-"use client";
-
-import axios from "axios";
+import UsersTable from "@/components/UsersTable/UsersTable";
 
 
-export default function Home() {
+export default async function Home() {
+  const users = await prisma?.user.findMany();
 
 
   return (
-    <div>
-
-    </div>
+    <>
+      <UsersTable users={users} />
+    </>
   );
 }
