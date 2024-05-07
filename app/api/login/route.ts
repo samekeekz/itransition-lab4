@@ -1,7 +1,6 @@
 import prisma from "@/prisma/prisma";
 import bcrypt from "bcrypt";
 import { SignInSchema } from "@/libs/signinSchema/signInSchema";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -41,12 +40,15 @@ export async function POST(req: Request) {
     });
   }
 
+  const date = new Date();
+  date.setDate(date.getDate() + 2);
+
   await prisma.user.update({
     where: {
       id: user.id,
     },
     data: {
-      last_login: new Date(),
+      last_login: date,
     },
   });
 

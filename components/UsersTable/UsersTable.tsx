@@ -5,7 +5,7 @@ import { AiFillDelete, AiFillLock, AiOutlineCheckCircle } from "react-icons/ai";
 import { FiLogOut } from "react-icons/fi";
 import { deleteUsers, blockUsers, unblockUsers, logOut } from "@/app/actions";
 import { useRouter } from "next/navigation";
-import { getUserDataFromLocalStorage, removeUserDataFromLocalStorage } from "@/libs/localstorage";
+import { format } from "date-fns";
 
 type User = {
   id: string;
@@ -27,37 +27,25 @@ const UsersTable = ({ users }: UsersTableProps) => {
   const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isChecked, setIsChecked] = useState(false);
-  const userData: UserData = getUserDataFromLocalStorage();
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   useEffect(() => {
     const data = localStorage.getItem("userData");
     const userData = data ? JSON.parse(data) : null;
-    if (!userData) {
+
+    if (!userData || !userData.id || !userData.name || !userData.status) {
       router.push("/login");
     }
+
+    setUserData(userData);
   }, []);
-
-
-  const formatDateTime = (dateTimeString: string) => {
-    const dateTime = new Date(dateTimeString);
-    const options = {
-      year: "numeric" as const,
-      month: "long" as const,
-      day: "numeric" as const,
-      hour: "numeric" as const,
-      minute: "numeric" as const,
-      second: "numeric" as const,
-      timeZoneName: "short" as const,
-    };
-    return dateTime.toLocaleDateString(undefined, options);
-  };
 
   const handleClick = async (fn: Function, selectedIds: string[]) => {
     setIsChecked(false);
     setSelectedIds([]);
-    const res = await fn(userData.id, selectedIds);
+    const res = await fn(userData?.id, selectedIds);
     if (res.error) {
-      removeUserDataFromLocalStorage();
+      localStorage.removeItem("userData");
       console.log(res.error.message);
       router.push(res.redirect);
       return;
@@ -181,10 +169,15 @@ const UsersTable = ({ users }: UsersTableProps) => {
               </td>
               <td className="px-6 py-4">{user.email}</td>
               <td className="px-6 py-4">
-                {formatDateTime(user.registration_time.toString())}
+                <span>
+
+                {format(user.registration_time, "EEE MMM dd yyyy HH:mm:ss")}
+                </span>
               </td>
               <td className="px-6 py-4">
-                {formatDateTime(user.last_login.toString())}
+                <span>
+                {format(user.last_login, "EEE MMM dd yyyy HH:mm:ss")}
+                </span>
               </td>
               <td className="px-4 py-4">
                   <span

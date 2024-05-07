@@ -29,14 +29,14 @@ const LoginForm = () => {
       body: JSON.stringify(data),
 
     });
-    if (!res.ok) {
-      const badRes = await res.json();
-      console.log(badRes.error.message);
+    const resData = await res.json();
+    const status = resData?.status;
+    if (status === "error") {
+      alert(resData.error.message);
       return;
     }
-    const successRes = await res.json();
-    localStorage.setItem("userData", JSON.stringify(successRes.data));
-    console.log(successRes);
+    localStorage.setItem("userData", JSON.stringify(resData.data));
+    console.log(resData);
     router.push("/");
   };
 

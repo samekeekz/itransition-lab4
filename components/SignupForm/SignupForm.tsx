@@ -29,13 +29,13 @@ const SignupForm = () => {
       body: JSON.stringify(data),
 
     });
-    if (!res.ok) {
-      const badRes = await res.json();
-      console.log(badRes.error.message);
+    const resData = await res.json();
+    const status = resData?.status;
+    if (status === "error") {
+      alert(resData.error.message);
       return;
     }
-    const successRes = await res.json();
-    console.log(successRes.status);
+    console.log(resData);
     router.push("/");
   };
 
