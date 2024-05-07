@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { AiFillDelete, AiFillLock, AiOutlineCheckCircle } from "react-icons/ai";
-import { deleteUsers, blockUsers, unblockUsers } from "@/app/actions";
+import { FiLogOut } from "react-icons/fi";
+import { deleteUsers, blockUsers, unblockUsers, logOut } from "@/app/actions";
+import { useRouter } from "next/navigation";
+import { getUserDataFromLocalStorage, removeUserDataFromLocalStorage } from "@/libs/localstorage";
 
 type User = {
   id: string;
@@ -19,15 +22,48 @@ type UsersTableProps = {
 
 type UserData = Pick<User, "id" | "name" | "status">;
 
+
 const UsersTable = ({ users }: UsersTableProps) => {
+  const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isChecked, setIsChecked] = useState(false);
-  const storedUserData: UserData = JSON.parse(sessionStorage.getItem("userData") || "{}");
+  const userData: UserData = getUserDataFromLocalStorage();
 
-  function formatDate(dateString: Date) {
-    return new Date(dateString).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-  }
+  useEffect(() => {
+    const data = localStorage.getItem("userData");
+    const userData = data ? JSON.parse(data) : null;
+    if (!userData) {
+      router.push("/login");
+    }
+  }, []);
 
+
+  const formatDateTime = (dateTimeString: string) => {
+    const dateTime = new Date(dateTimeString);
+    const options = {
+      year: "numeric" as const,
+      month: "long" as const,
+      day: "numeric" as const,
+      hour: "numeric" as const,
+      minute: "numeric" as const,
+      second: "numeric" as const,
+      timeZoneName: "short" as const,
+    };
+    return dateTime.toLocaleDateString(undefined, options);
+  };
+
+  const handleClick = async (fn: Function, selectedIds: string[]) => {
+    setIsChecked(false);
+    setSelectedIds([]);
+    const res = await fn(userData.id, selectedIds);
+    if (res.error) {
+      removeUserDataFromLocalStorage();
+      console.log(res.error.message);
+      router.push(res.redirect);
+      return;
+    }
+    console.log(res.success.message);
+  };
   const handleCheckAll = () => {
     setIsChecked(!isChecked);
     if (!isChecked) {
@@ -49,25 +85,37 @@ const UsersTable = ({ users }: UsersTableProps) => {
     }
   };
 
+  const handleLogOut = async () => {
+    const res = await logOut();
+    localStorage.removeItem("userData");
+    router.push(res.redirect);
+  };
+
   return (
     <div className="max-w-[1300px] mx-auto p-5">
-      <h1 className="text-2xl font-semibold text-black mb-10">Welcome {storedUserData.name}</h1>
+      <h1 className="text-2xl font-semibold text-black mb-10">Welcome {userData?.name}</h1>
 
       <div className="flex space-x-4 mb-7">
-        <button onClick={() => deleteUsers(storedUserData.id, selectedIds)}
+        <button onClick={() => handleClick(deleteUsers, selectedIds)}
                 className="flex items-center px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600">
           <AiFillDelete />
           <span className="ml-2">Delete</span>
         </button>
-        <button onClick={() => blockUsers(storedUserData.id, selectedIds)}
+        <button onClick={() => handleClick(blockUsers, selectedIds)}
                 className="flex items-center px-4 py-2 text-white bg-yellow-500 rounded hover:bg-yellow-600">
           <AiFillLock />
           <span className="ml-2">Block</span>
         </button>
-        <button onClick={() => unblockUsers(storedUserData.id, selectedIds)}
+        <button onClick={() => handleClick(unblockUsers, selectedIds)}
                 className="flex items-center px-4 py-2 text-white bg-green-500 rounded hover:bg-green-600">
           <AiOutlineCheckCircle />
           <span className="ml-2">Unblock</span>
+        </button>
+        <button className="flex grow"></button>
+        <button onClick={handleLogOut}
+                className="flex items-center justify-self-end px-4 py-2 text-black bg-white rounded border-[1px] border-black">
+          <FiLogOut />
+          <span className="ml-2">Logout</span>
         </button>
       </div>
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
@@ -133,10 +181,10 @@ const UsersTable = ({ users }: UsersTableProps) => {
               </td>
               <td className="px-6 py-4">{user.email}</td>
               <td className="px-6 py-4">
-                {formatDate(user.registration_time)}
+                {formatDateTime(user.registration_time.toString())}
               </td>
               <td className="px-6 py-4">
-                {formatDate(user.last_login || new Date())}
+                {formatDateTime(user.last_login.toString())}
               </td>
               <td className="px-4 py-4">
                   <span

@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema } from "@/libs/signupSchema/signupSchema";
 import { z } from "zod";
-import { signup } from "@/app/actions";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 

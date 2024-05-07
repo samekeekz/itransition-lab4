@@ -32,5 +32,4 @@ export async function POST(req: Request, res: Response) {
   });
 
   return NextResponse.json({ status: "success", error: {} });
-
 }

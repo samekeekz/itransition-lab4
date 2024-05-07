@@ -2,17 +2,21 @@
 
 import prisma from "@/prisma/prisma";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
-export const getUsers = async () => {
-  const users = await prisma.user.findMany();
 
-  return users;
+type User = {
+  id: string;
+  name: string;
+  status: string;
 };
+
 
 export const deleteUsers = async (id: string, userIds: string[]) => {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user || user.status !== "ACTIVE") {
-    return { error: { message: "User status is not active" } };
+    deleteCookie();
+    return { error: { message: "User status is not active" }, redirect: "/login" };
   }
 
   await Promise.all(userIds.map(userId =>
@@ -23,7 +27,12 @@ export const deleteUsers = async (id: string, userIds: string[]) => {
     }),
   ));
 
-  revalidatePath("/");
+  if (userIds.includes(id)) {
+    deleteCookie();
+    return { error: { message: "User deleted" }, redirect: "/login" };
+  }
+
+  revalidatePath("/", "page");
 
   return {
     success: {
@@ -34,24 +43,23 @@ export const deleteUsers = async (id: string, userIds: string[]) => {
 
 
 export const blockUsers = async (id: string, userIds: string[]) => {
-  console.log(id, userIds);
   const user = await prisma.user.findUnique({ where: { id } });
+  console.log(user);
   if (!user || user.status !== "ACTIVE") {
-    return { error: { message: "User status is not active" } };
+    deleteCookie();
+    return { error: { message: "User status is not active" }, redirect: "/login" };
   }
 
   await Promise.all(userIds.map(userId =>
     prisma.user.update({
-      where: {
-        id: userId,
-      },
+      where: { id: userId },
       data: {
         status: "BLOCKED",
       },
     }),
   ));
 
-  revalidatePath("/");
+  revalidatePath("/", "page");
 
   return {
     success: {
@@ -63,25 +71,39 @@ export const blockUsers = async (id: string, userIds: string[]) => {
 export const unblockUsers = async (id: string, userIds: string[]) => {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user || user.status !== "ACTIVE") {
-    return { error: { message: "User status is not active" } };
+    deleteCookie();
+    return { error: { message: "User status is not active" }, redirect: "/login" };
   }
 
   await Promise.all(userIds.map(userId =>
     prisma.user.update({
-      where: {
-        id: userId,
-      },
+      where: { id: userId },
       data: {
         status: "ACTIVE",
       },
     }),
   ));
 
-  revalidatePath("/");
+  revalidatePath("/", "page");
 
   return {
     success: {
       message: "Users unblocked successfully",
     },
+  };
+};
+
+const deleteCookie = () => {
+  cookies().delete("userData");
+
+};
+
+export const logOut = async () => {
+  deleteCookie();
+  return {
+    success: {
+      message: "Logged out successfully",
+    },
+    redirect: "/login",
   };
 };

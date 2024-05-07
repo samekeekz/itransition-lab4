@@ -1,7 +1,8 @@
 import UsersTable from "@/components/UsersTable/UsersTable";
+import prisma from "@/prisma/prisma";
 
 
-export default async function Home() {
+async function Home() {
   const users = await prisma?.user.findMany();
 
 
@@ -11,3 +12,5 @@ export default async function Home() {
     </>
   );
 }
+
+export default Home;

@@ -4,7 +4,7 @@ import { SignInSchema } from "@/libs/signinSchema/signInSchema";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function POST(req: Request, res: Response) {
+export async function POST(req: Request) {
   const userData: SignInSchema = await req.json();
   console.log(userData);
   const user = await prisma.user.findUnique({
@@ -56,7 +56,6 @@ export async function POST(req: Request, res: Response) {
     status: user.status,
   };
 
-  cookies().set("userData", JSON.stringify(storedData));
-  return NextResponse.json({ status: "success", error: {} });
+  return NextResponse.json({ status: "success", error: {}, data: storedData });
 
 }

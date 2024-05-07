@@ -3,7 +3,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { login } from "@/app/actions";
 import { signInSchema } from "@/libs/signinSchema/signInSchema";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,7 +35,8 @@ const LoginForm = () => {
       return;
     }
     const successRes = await res.json();
-    console.log(successRes.status);
+    localStorage.setItem("userData", JSON.stringify(successRes.data));
+    console.log(successRes);
     router.push("/");
   };
 
